@@ -112,6 +112,7 @@ func (adam *Ctx) getLoader() (loader loaders.Loader) {
 				StreamInfo:    adam.getInfoRedisStreamCache,
 				StreamMetrics: adam.getMetricsRedisStreamCache,
 				StreamRequest: adam.getRequestRedisStreamCache,
+				StreamApps:    adam.getAppLogsRedisStreamCache,
 			}
 			cache = cachers.RedisCache(addr, password, databaseID, streamGetters)
 		} else {

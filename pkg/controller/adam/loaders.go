@@ -43,6 +43,14 @@ func (adam *Ctx) getLogsRedisStreamCache(devUUID uuid.UUID) (dir string) {
 	return fmt.Sprintf("LOGS_EVE_%s_%s", adam.AdamCachingPrefix, devUUID.String())
 }
 
+//getAppLogsRedisStreamCache return app logs stream for devUUID for caching in redis
+func (adam *Ctx) getAppLogsRedisStreamCache(devUUID uuid.UUID, appUUID uuid.UUID) (dir string) {
+	if adam.AdamCachingPrefix == "" {
+		return adam.getLogsRedisStream(devUUID)
+	}
+	return fmt.Sprintf("APPS_EVE_%s_%s_%s", adam.AdamCachingPrefix, devUUID.String(), appUUID.String())
+}
+
 //getInfoRedisStreamCache return info stream for devUUID for caching in redis
 func (adam *Ctx) getInfoRedisStreamCache(devUUID uuid.UUID) (dir string) {
 	if adam.AdamCachingPrefix == "" {
@@ -75,6 +83,14 @@ func (adam *Ctx) getLogsDirCache(devUUID uuid.UUID) (dir string) {
 	return path.Join(adam.dir, adam.AdamCachingPrefix, devUUID.String(), "logs")
 }
 
+//getAppLogsDirCache return app logs directory for devUUID for caching
+func (adam *Ctx) getAppLogsDirCache(devUUID uuid.UUID, appUUID uuid.UUID) (dir string) {
+	if adam.AdamCachingPrefix == "" {
+		return adam.getAppLogsDir(devUUID, appUUID)
+	}
+	return path.Join(adam.dir, adam.AdamCachingPrefix, devUUID.String(), appUUID.String())
+}
+
 //getInfoDirCache return info directory for devUUID for caching
 func (adam *Ctx) getInfoDirCache(devUUID uuid.UUID) (dir string) {
 	if adam.AdamCachingPrefix == "" {
@@ -102,6 +118,11 @@ func (adam *Ctx) getRequestDirCache(devUUID uuid.UUID) (dir string) {
 //getLogsDir return logs directory for devUUID
 func (adam *Ctx) getLogsDir(devUUID uuid.UUID) (dir string) {
 	return path.Join(adam.dir, "run", "adam", "device", devUUID.String(), "logs")
+}
+
+//getLogsDir return logs directory for devUUID
+func (adam *Ctx) getAppLogsDir(devUUID uuid.UUID, appUUID uuid.UUID) (dir string) {
+	return path.Join(adam.dir, "run", "adam", "device", devUUID.String(), appUUID.String())
 }
 
 //getInfoDir return info directory for devUUID
