@@ -5,7 +5,9 @@ go 1.12
 require (
 	github.com/Microsoft/hcsshim v0.8.9 // indirect
 	github.com/amitbet/vncproxy v0.0.0-20200118084310-ea8f9b510913
+	github.com/containerd/containerd v1.3.2
 	github.com/containerd/continuity v0.0.0-20200710164510-efbc4488d8fe // indirect
+	github.com/deislabs/oras v0.8.1
 	github.com/docker/cli v0.0.0-20200130152716-5d0cf8839492 // indirect
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce

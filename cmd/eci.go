@@ -11,14 +11,16 @@ import (
 	"github.com/lf-edge/edge-containers/pkg/resolver"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
-	kernelFile   string
-	initrdFile   string
-	rootFile     string
-	arch         string
-	remoteTarget resolver.ResolverCloser
+	kernelFile string
+	initrdFile string
+	rootFile   string
+	formatStr  string
+	arch       string
+	local      bool
 )
 
 // convert a "path:type" to a Disk struct
@@ -57,12 +59,21 @@ var podPublishCmd = &cobra.Command{
 			rootDisk     *edgeRegistry.Disk
 			kernelSource *edgeRegistry.FileSource
 			initrdSource *edgeRegistry.FileSource
+			remoteTarget resolver.ResolverCloser
 			err          error
 		)
 		ctx := context.TODO()
-		_, remoteTarget, err = resolver.NewRegistry(ctx)
-		if err != nil {
-			log.Fatalf("unexpected error when created NewRegistry resolver: %v", err)
+		if local {
+			_, remoteTarget, err = utils.NewRegistryHttp(ctx)
+			if err != nil {
+				log.Fatalf("unexpected error when created NewRegistry resolver: %v", err)
+			}
+			appName = fmt.Sprintf("%s:%d/%s", viper.GetString("registry.ip"), viper.GetInt("registry.port"), appName)
+		} else {
+			_, remoteTarget, err = resolver.NewRegistry(ctx)
+			if err != nil {
+				log.Fatalf("unexpected error when created NewRegistry resolver: %v", err)
+			}
 		}
 		if rootFile != "" {
 			rootDisk, err = diskToStruct(rootFile)
@@ -91,7 +102,16 @@ var podPublishCmd = &cobra.Command{
 			Artifact: artifact,
 			Image:    appName,
 		}
-		hash, err := pusher.Push(edgeRegistry.FormatArtifacts, true, os.Stdout, edgeRegistry.ConfigOpts{
+		var format edgeRegistry.Format
+		switch formatStr {
+		case "artifacts":
+			format = edgeRegistry.FormatArtifacts
+		case "legacy":
+			format = edgeRegistry.FormatLegacy
+		default:
+			log.Fatalf("unknown format: %v", formatStr)
+		}
+		hash, err := pusher.Push(format, true, os.Stdout, edgeRegistry.ConfigOpts{
 			Author:       edgeRegistry.DefaultAuthor,
 			OS:           edgeRegistry.DefaultOS,
 			Architecture: arch,
@@ -99,7 +119,7 @@ var podPublishCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("error pushing to registry: %v", err)
 		}
-		fmt.Printf("Pushed image %s with digest %s\n", image, hash)
+		fmt.Printf("Pushed image %s with digest %s\n", appName, hash)
 	},
 }
 
@@ -108,5 +128,7 @@ func eciInit() {
 	podPublishCmd.Flags().StringVar(&kernelFile, "kernel", "", "path to kernel file, optional")
 	podPublishCmd.Flags().StringVar(&initrdFile, "initrd", "", "path to initrd file, optional")
 	podPublishCmd.Flags().StringVar(&rootFile, "root", "", "path to root disk file and format (for example: image.img:qcow2)")
-	podPublishCmd.Flags().StringVarP(&arch, "arch", "", edgeRegistry.DefaultArch, "arch to deploy")
+	podPublishCmd.Flags().BoolVar(&local, "local", false, "push to local registry")
+	podPublishCmd.Flags().StringVar(&formatStr, "format", "artifacts", "which format to use, one of: artifacts, legacy")
+	podPublishCmd.Flags().StringVar(&arch, "arch", edgeRegistry.DefaultArch, "arch to deploy")
 }
