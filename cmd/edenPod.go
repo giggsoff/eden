@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/lf-edge/eden/pkg/controller"
 	"os"
 	"sort"
 	"strconv"
@@ -59,7 +60,7 @@ var podDeployCmd = &cobra.Command{
 	Long:  `Deploy app in pod.`,
 	Args:  cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -69,10 +70,10 @@ var podDeployCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		appLink := args[0]
-		changer := &adamChanger{}
-		ctrl, dev, err := changer.getControllerAndDev()
+		changer := controller.GetAdamChanger()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev: %s", err)
+			log.Fatalf("GetControllerAndDev: %s", err)
 		}
 		var opts []expect.ExpectationOption
 		opts = append(opts, expect.WithMetadata(podMetadata))
@@ -110,8 +111,8 @@ var podDeployCmd = &cobra.Command{
 		expectation := expect.AppExpectationFromUrl(ctrl, dev, appLink, podName, opts...)
 		appInstanceConfig := expectation.Application()
 		dev.SetApplicationInstanceConfig(append(dev.GetApplicationInstances(), appInstanceConfig.Uuidandversion.Uuid))
-		if err = changer.setControllerAndDev(ctrl, dev); err != nil {
-			log.Fatalf("setControllerAndDev: %s", err)
+		if err = changer.SetControllerAndDev(ctrl, dev); err != nil {
+			log.Fatalf("SetControllerAndDev: %s", err)
 		}
 		log.Infof("deploy pod %s with %s request sent", appInstanceConfig.Displayname, appLink)
 	},
@@ -208,7 +209,7 @@ var podPsCmd = &cobra.Command{
 	Use:   "ps",
 	Short: "List pods",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -218,10 +219,10 @@ var podPsCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		changer := &adamChanger{}
-		ctrl, dev, err := changer.getControllerAndDev()
+		changer := controller.GetAdamChanger()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev: %s", err)
+			log.Fatalf("GetControllerAndDev: %s", err)
 		}
 		appStates := make(map[string]*appState)
 		for _, el := range dev.GetApplicationInstances() {
@@ -407,7 +408,7 @@ var podStopCmd = &cobra.Command{
 	Short: "Stop pod",
 	Args:  cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -416,10 +417,10 @@ var podStopCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		appName := args[0]
-		changer := &adamChanger{}
-		ctrl, dev, err := changer.getControllerAndDev()
+		changer := controller.GetAdamChanger()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev: %s", err)
+			log.Fatalf("GetControllerAndDev: %s", err)
 		}
 		for _, el := range dev.GetApplicationInstances() {
 			app, err := ctrl.GetApplicationInstanceConfig(el)
@@ -428,8 +429,8 @@ var podStopCmd = &cobra.Command{
 			}
 			if app.Displayname == appName {
 				app.Activate = false
-				if err = changer.setControllerAndDev(ctrl, dev); err != nil {
-					log.Fatalf("setControllerAndDev: %s", err)
+				if err = changer.SetControllerAndDev(ctrl, dev); err != nil {
+					log.Fatalf("SetControllerAndDev: %s", err)
 				}
 				log.Infof("app %s stop done", appName)
 				return
@@ -445,7 +446,7 @@ var podStartCmd = &cobra.Command{
 	Short: "Start pod",
 	Args:  cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -454,10 +455,10 @@ var podStartCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		appName := args[0]
-		changer := &adamChanger{}
-		ctrl, dev, err := changer.getControllerAndDev()
+		changer := controller.GetAdamChanger()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev: %s", err)
+			log.Fatalf("GetControllerAndDev: %s", err)
 		}
 		for _, el := range dev.GetApplicationInstances() {
 			app, err := ctrl.GetApplicationInstanceConfig(el)
@@ -466,8 +467,8 @@ var podStartCmd = &cobra.Command{
 			}
 			if app.Displayname == appName {
 				app.Activate = true
-				if err = changer.setControllerAndDev(ctrl, dev); err != nil {
-					log.Fatalf("setControllerAndDev: %s", err)
+				if err = changer.SetControllerAndDev(ctrl, dev); err != nil {
+					log.Fatalf("SetControllerAndDev: %s", err)
 				}
 				log.Infof("app %s start done", appName)
 				return
@@ -483,7 +484,7 @@ var podDeleteCmd = &cobra.Command{
 	Short: "Delete pod",
 	Args:  cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -492,10 +493,10 @@ var podDeleteCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		appName := args[0]
-		changer := &adamChanger{}
-		ctrl, dev, err := changer.getControllerAndDev()
+		changer := controller.GetAdamChanger()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev: %s", err)
+			log.Fatalf("GetControllerAndDev: %s", err)
 		}
 		for id, el := range dev.GetApplicationInstances() {
 			app, err := ctrl.GetApplicationInstanceConfig(el)
@@ -506,8 +507,8 @@ var podDeleteCmd = &cobra.Command{
 				configs := dev.GetApplicationInstances()
 				utils.DelEleInSlice(&configs, id)
 				dev.SetApplicationInstanceConfig(configs)
-				if err = changer.setControllerAndDev(ctrl, dev); err != nil {
-					log.Fatalf("setControllerAndDev: %s", err)
+				if err = changer.SetControllerAndDev(ctrl, dev); err != nil {
+					log.Fatalf("SetControllerAndDev: %s", err)
 				}
 				log.Infof("app %s delete done", appName)
 				return
@@ -523,7 +524,7 @@ var podLogsCmd = &cobra.Command{
 	Short: "Logs of pod",
 	Args:  cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -542,10 +543,10 @@ var podLogsCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		appName := args[0]
-		changer := &adamChanger{}
-		ctrl, dev, err := changer.getControllerAndDev()
+		changer := controller.GetAdamChanger()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev: %s", err)
+			log.Fatalf("GetControllerAndDev: %s", err)
 		}
 		for _, el := range dev.GetApplicationInstances() {
 			app, err := ctrl.GetApplicationInstanceConfig(el)

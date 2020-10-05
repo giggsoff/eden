@@ -14,6 +14,7 @@ import (
 	"github.com/lf-edge/eden/pkg/defaults"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -539,4 +540,12 @@ func generateConfigFileFromTemplate(filePath string, templateString string, cont
 		log.Fatal(err)
 	}
 	return nil
+}
+
+func AssignCobraToViper(cmd *cobra.Command) {
+	for k, v := range defaults.DefaultCobraToViper {
+		if flag := cmd.Flag(v); flag != nil {
+			_ = viper.BindPFlag(k, flag)
+		}
+	}
 }

@@ -81,7 +81,7 @@ var configAddCmd = &cobra.Command{
 				log.Debugf("current config already exists: %s", configFile)
 			}
 		}
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		if _, err = os.Stat(configFile); os.IsNotExist(err) {
 			if err = utils.GenerateConfigFile(configFile); err != nil {
 				log.Fatalf("fail in generate yaml: %s", err.Error())
@@ -204,7 +204,7 @@ var configListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List config contexts",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -234,7 +234,7 @@ var configSetCmd = &cobra.Command{
 	Long:  "Set current context to name \n\t will only modify key for name context if --key not empty",
 	Args:  cobra.ExactValidArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -277,7 +277,7 @@ var configEditCmd = &cobra.Command{
 	Short: "Edit current or context with defined name with $EDITOR",
 	Args:  cobra.RangeArgs(0, 1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -317,7 +317,7 @@ var configResetCmd = &cobra.Command{
 	Short: "Reset current or context with defined name to defaults",
 	Args:  cobra.RangeArgs(0, 1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -360,7 +360,7 @@ var configGetCmd = &cobra.Command{
 	Long:  "Get config context for current or defined name. \n\tif --key set will show selected key only\n\tif --all set will return complete config",
 	Args:  cobra.RangeArgs(0, 1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -419,7 +419,7 @@ var configDeleteCmd = &cobra.Command{
 	Short: "delete config context",
 	Args:  cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())

@@ -1,10 +1,9 @@
-package cmd
+package controller
 
 import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/eden/pkg/controller"
 	"github.com/lf-edge/eden/pkg/controller/adam"
 	"github.com/lf-edge/eden/pkg/device"
 	"github.com/lf-edge/eve/api/go/config"
@@ -15,24 +14,28 @@ import (
 	"strings"
 )
 
-type configChanger interface {
-	getControllerAndDev() (controller.Cloud, *device.Ctx, error)
-	setControllerAndDev(controller.Cloud, *device.Ctx) error
+type ConfigChanger interface {
+	GetControllerAndDev() (Cloud, *device.Ctx, error)
+	SetControllerAndDev(Cloud, *device.Ctx) error
 }
 
-type fileChanger struct {
+type FileChanger struct {
 	fileConfig string
 	oldHash    [32]byte
 }
 
-func (ctx *fileChanger) getControllerAndDev() (controller.Cloud, *device.Ctx, error) {
+func GetFileChanger(fileConfig string) *FileChanger {
+	return &FileChanger{fileConfig: fileConfig}
+}
+
+func (ctx *FileChanger) GetControllerAndDev() (Cloud, *device.Ctx, error) {
 	if ctx.fileConfig == "" {
 		return nil, nil, fmt.Errorf("cannot use empty url for file")
 	}
 	if _, err := os.Lstat(ctx.fileConfig); os.IsNotExist(err) {
 		return nil, nil, err
 	}
-	var ctrl controller.Cloud = &controller.CloudCtx{Controller: &adam.Ctx{}}
+	var ctrl Cloud = &CloudCtx{Controller: &adam.Ctx{}}
 	data, err := ioutil.ReadFile(ctx.fileConfig)
 	if err != nil {
 		return nil, nil, fmt.Errorf("file reading error: %s", err)
@@ -54,7 +57,7 @@ func (ctx *fileChanger) getControllerAndDev() (controller.Cloud, *device.Ctx, er
 	return ctrl, dev, nil
 }
 
-func (ctx *fileChanger) setControllerAndDev(ctrl controller.Cloud, dev *device.Ctx) error {
+func (ctx *FileChanger) SetControllerAndDev(ctrl Cloud, dev *device.Ctx) error {
 	res, err := ctrl.GetConfigBytes(dev, false)
 	if err != nil {
 		return fmt.Errorf("GetConfigBytes error: %s", err)
@@ -64,7 +67,7 @@ func (ctx *fileChanger) setControllerAndDev(ctrl controller.Cloud, dev *device.C
 		log.Debug("config not modified")
 		return nil
 	}
-	if res, err = controller.VersionIncrement(res); err != nil {
+	if res, err = VersionIncrement(res); err != nil {
 		return fmt.Errorf("VersionIncrement error: %s", err)
 	}
 	if err = ioutil.WriteFile(ctx.fileConfig, res, 0755); err != nil {
@@ -74,11 +77,18 @@ func (ctx *fileChanger) setControllerAndDev(ctrl controller.Cloud, dev *device.C
 	return nil
 }
 
-type adamChanger struct {
+type AdamChanger struct {
 	adamUrl string
 }
 
-func (ctx *adamChanger) getController() (controller.Cloud, error) {
+func GetAdamChanger(url ...string) *AdamChanger {
+	if len(url) > 0 {
+		return &AdamChanger{adamUrl: url[0]}
+	}
+	return &AdamChanger{}
+}
+
+func (ctx *AdamChanger) getController() (Cloud, error) {
 	if ctx.adamUrl != "" { //overwrite config only if url defined
 		ipPort := strings.Split(ctx.adamUrl, ":")
 		ip := ipPort[0]
@@ -92,14 +102,14 @@ func (ctx *adamChanger) getController() (controller.Cloud, error) {
 		viper.Set("adam.ip", ip)
 		viper.Set("adam.port", port)
 	}
-	ctrl, err := controller.CloudPrepare()
+	ctrl, err := CloudPrepare()
 	if err != nil {
 		return nil, fmt.Errorf("CloudPrepare error: %s", err)
 	}
 	return ctrl, nil
 }
 
-func (ctx *adamChanger) getControllerAndDev() (controller.Cloud, *device.Ctx, error) {
+func (ctx *AdamChanger) GetControllerAndDev() (Cloud, *device.Ctx, error) {
 	ctrl, err := ctx.getController()
 	if err != nil {
 		return nil, nil, fmt.Errorf("getController error: %s", err)
@@ -111,7 +121,7 @@ func (ctx *adamChanger) getControllerAndDev() (controller.Cloud, *device.Ctx, er
 	return ctrl, devFirst, nil
 }
 
-func (ctx *adamChanger) setControllerAndDev(ctrl controller.Cloud, dev *device.Ctx) error {
+func (ctx *AdamChanger) SetControllerAndDev(ctrl Cloud, dev *device.Ctx) error {
 	if err := ctrl.ConfigSync(dev); err != nil {
 		return fmt.Errorf("configSync error: %s", err)
 	}

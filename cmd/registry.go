@@ -28,7 +28,7 @@ var startRegistryCmd = &cobra.Command{
 	Short: "start registry",
 	Long:  `Start OCI/docker registry.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -59,7 +59,7 @@ var stopRegistryCmd = &cobra.Command{
 	Short: "stop registry",
 	Long:  `Stop OCI/docker registry.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -74,7 +74,7 @@ var statusRegistryCmd = &cobra.Command{
 	Short: "status of registry",
 	Long:  `Status of OCI/docker registry.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -94,7 +94,7 @@ var loadRegistryCmd = &cobra.Command{
 	If it fails, pull from remote to local, and then load.`,
 	Args: cobra.MinimumNArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())

@@ -32,7 +32,7 @@ var startCmd = &cobra.Command{
 	Short: "start harness",
 	Long:  `Start harness.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())

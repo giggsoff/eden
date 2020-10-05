@@ -24,7 +24,7 @@ var logCmd = &cobra.Command{
 	Long: `
 Scans the ADAM logs for correspondence with regular expressions requests to json fields.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())

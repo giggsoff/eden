@@ -8,11 +8,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/lf-edge/eden/pkg/defaults"
 	"github.com/lf-edge/eden/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var verbosity string
@@ -32,14 +30,6 @@ func setUpLogs(out io.Writer, level string) error {
 	}
 	logrus.SetLevel(lvl)
 	return nil
-}
-
-func assignCobraToViper(cmd *cobra.Command) {
-	for k, v := range defaults.DefaultCobraToViper {
-		if flag := cmd.Flag(v); flag != nil {
-			_ = viper.BindPFlag(k, flag)
-		}
-	}
 }
 
 func init() {

@@ -28,7 +28,7 @@ var startRedisCmd = &cobra.Command{
 	Short: "start redis",
 	Long:  `Start redis.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -60,7 +60,7 @@ var stopRedisCmd = &cobra.Command{
 	Short: "stop redis",
 	Long:  `Stop redis.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -82,7 +82,7 @@ var statusRedisCmd = &cobra.Command{
 	Short: "status of redis",
 	Long:  `Status of redis.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())

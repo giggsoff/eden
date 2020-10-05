@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/lf-edge/eden/pkg/controller"
 	"github.com/lf-edge/eden/pkg/controller/einfo"
 	"github.com/lf-edge/eden/pkg/defaults"
 	"github.com/lf-edge/eden/pkg/expect"
@@ -49,7 +50,7 @@ var networkLsCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "List networks",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -59,10 +60,10 @@ var networkLsCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		changer := &adamChanger{}
-		ctrl, dev, err := changer.getControllerAndDev()
+		changer := controller.GetAdamChanger()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev: %s", err)
+			log.Fatalf("GetControllerAndDev: %s", err)
 		}
 		netInstStates := make(map[string]*netInstState)
 		for _, el := range dev.GetNetworkInstances() {
@@ -150,7 +151,7 @@ var networkDeleteCmd = &cobra.Command{
 	Short: "Delete network",
 	Args:  cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -159,10 +160,10 @@ var networkDeleteCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		niName := args[0]
-		changer := &adamChanger{}
-		ctrl, dev, err := changer.getControllerAndDev()
+		changer := controller.GetAdamChanger()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev: %s", err)
+			log.Fatalf("GetControllerAndDev: %s", err)
 		}
 		for id, el := range dev.GetNetworkInstances() {
 			ni, err := ctrl.GetNetworkInstanceConfig(el)
@@ -173,8 +174,8 @@ var networkDeleteCmd = &cobra.Command{
 				configs := dev.GetNetworkInstances()
 				utils.DelEleInSlice(&configs, id)
 				dev.SetNetworkInstanceConfig(configs)
-				if err = changer.setControllerAndDev(ctrl, dev); err != nil {
-					log.Fatalf("setControllerAndDev: %s", err)
+				if err = changer.SetControllerAndDev(ctrl, dev); err != nil {
+					log.Fatalf("SetControllerAndDev: %s", err)
 				}
 				log.Infof("network %s delete done", niName)
 				return
@@ -190,7 +191,7 @@ var networkCreateCmd = &cobra.Command{
 	Short: "Create network instance in EVE",
 	Args:  cobra.RangeArgs(0, 1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -209,10 +210,10 @@ var networkCreateCmd = &cobra.Command{
 			}
 			subnet = args[0]
 		}
-		changer := &adamChanger{}
-		ctrl, dev, err := changer.getControllerAndDev()
+		changer := controller.GetAdamChanger()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev: %s", err)
+			log.Fatalf("GetControllerAndDev: %s", err)
 		}
 		var opts []expect.ExpectationOption
 		opts = append(opts, expect.AddNetInstanceAndPortPublish(subnet, networkType, nil))
@@ -229,8 +230,8 @@ var networkCreateCmd = &cobra.Command{
 			dev.SetNetworkInstanceConfig(append(dev.GetNetworkInstances(), el.Uuidandversion.Uuid))
 			log.Infof("deploy network %s with name %s request sent", el.Uuidandversion.Uuid, el.Displayname)
 		}
-		if err = changer.setControllerAndDev(ctrl, dev); err != nil {
-			log.Fatalf("setControllerAndDev: %s", err)
+		if err = changer.SetControllerAndDev(ctrl, dev); err != nil {
+			log.Fatalf("SetControllerAndDev: %s", err)
 		}
 	},
 }

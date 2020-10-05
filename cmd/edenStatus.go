@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/lf-edge/adam/pkg/driver/common"
+	"github.com/lf-edge/eden/pkg/controller"
 	"github.com/lf-edge/eden/pkg/eden"
 	"os"
 	"path/filepath"
@@ -27,10 +28,10 @@ const (
 
 func eveRequestsAdam() {
 	log.Debugf("Will try to obtain info from ADAM")
-	changer := &adamChanger{}
-	ctrl, dev, err := changer.getControllerAndDev()
+	changer := controller.GetAdamChanger()
+	ctrl, dev, err := changer.GetControllerAndDev()
 	if err != nil {
-		log.Debugf("getControllerAndDev: %s", err)
+		log.Debugf("GetControllerAndDev: %s", err)
 		fmt.Printf("%s EVE status: undefined (no onboarded EVE)\n", statusWarn())
 	} else {
 		var lastRequest *common.ApiRequest
@@ -53,10 +54,10 @@ func eveRequestsAdam() {
 
 func eveStatusRemote() {
 	log.Debugf("Will try to obtain info from ADAM")
-	changer := &adamChanger{}
-	ctrl, dev, err := changer.getControllerAndDev()
+	changer := controller.GetAdamChanger()
+	ctrl, dev, err := changer.GetControllerAndDev()
 	if err != nil {
-		log.Debugf("getControllerAndDev: %s", err)
+		log.Debugf("GetControllerAndDev: %s", err)
 		fmt.Printf("%s EVE status: undefined (no onboarded EVE)\n", statusWarn())
 	} else {
 		var lastDInfo *info.ZInfoMsg
@@ -101,7 +102,7 @@ var statusCmd = &cobra.Command{
 	Short: "status of harness",
 	Long:  `Status of harness.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())

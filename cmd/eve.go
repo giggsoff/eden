@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/lf-edge/eden/pkg/controller"
 	"github.com/lf-edge/eden/pkg/eden"
 	"io/ioutil"
 	"os"
@@ -42,7 +43,7 @@ var startEveCmd = &cobra.Command{
 	Short: "start eve",
 	Long:  `Start eve.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -123,7 +124,7 @@ var stopEveCmd = &cobra.Command{
 	Short: "stop eve",
 	Long:  `Stop eve.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -150,7 +151,7 @@ var versionEveCmd = &cobra.Command{
 	Short: "version of eve",
 	Long:  `Version of eve.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -163,10 +164,10 @@ var versionEveCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Debugf("Will try to obtain info from ADAM")
-		changer := &adamChanger{}
-		ctrl, dev, err := changer.getControllerAndDev()
+		changer := controller.GetAdamChanger()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Debugf("getControllerAndDev: %s", err)
+			log.Debugf("GetControllerAndDev: %s", err)
 			fmt.Println("EVE status: undefined (no onboarded EVE)")
 		} else {
 			var lastDInfo *info.ZInfoMsg
@@ -193,7 +194,7 @@ var statusEveCmd = &cobra.Command{
 	Short: "status of eve",
 	Long:  `Status of eve.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -223,7 +224,7 @@ var consoleEveCmd = &cobra.Command{
 	Short: "telnet into eve",
 	Long:  `Telnet into eve.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -248,7 +249,7 @@ var sshEveCmd = &cobra.Command{
 	Short: "ssh into eve",
 	Long:  `SSH into eve.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -264,8 +265,8 @@ var sshEveCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := os.Stat(eveSSHKey); !os.IsNotExist(err) {
-			changer := &adamChanger{}
-			ctrl, dev, err := changer.getControllerAndDev()
+			changer := controller.GetAdamChanger()
+			ctrl, dev, err := changer.GetControllerAndDev()
 			if err != nil {
 				log.Fatalf("Cannot get controller or dev, please start them and onboard: %s", err)
 			}
@@ -332,7 +333,7 @@ var onboardEveCmd = &cobra.Command{
 	Short: "OnBoard EVE in Adam",
 	Long:  `Adding an EVE onboarding certificate to Adam and waiting for EVE to register.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -348,8 +349,8 @@ var onboardEveCmd = &cobra.Command{
 		if err = utils.TouchFile(filepath.Join(edenDir, fmt.Sprintf("state-%s.yml", eveUUID))); err != nil {
 			log.Fatal(err)
 		}
-		changer := &adamChanger{}
-		ctrl, err := changer.getController()
+		changer := controller.GetAdamChanger()
+		ctrl, _, err := changer.GetControllerAndDev()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -375,7 +376,7 @@ var resetEveCmd = &cobra.Command{
 	Use:   "reset",
 	Short: "Reset EVE to initial config",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -394,8 +395,8 @@ var resetEveCmd = &cobra.Command{
 		if err = utils.TouchFile(filepath.Join(edenDir, fmt.Sprintf("state-%s.yml", eveUUID))); err != nil {
 			log.Fatal(err)
 		}
-		changer := &adamChanger{}
-		ctrl, dev, err := changer.getControllerAndDev()
+		changer := controller.GetAdamChanger()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
 			log.Fatal(err)
 		}

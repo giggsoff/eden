@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/lf-edge/eden/pkg/controller"
 	"github.com/lf-edge/eden/pkg/defaults"
 	"github.com/lf-edge/eden/pkg/expect"
 	"github.com/lf-edge/eden/pkg/projects"
@@ -44,7 +45,7 @@ var edgeNodeReboot = &cobra.Command{
 	Short: "reboot EVE instance",
 	Long:  `reboot EVE instance.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading configFile: %s", err.Error())
@@ -58,25 +59,24 @@ var edgeNodeReboot = &cobra.Command{
 		}
 		log.Debugf("Mode type: %s", modeType)
 		log.Debugf("Mode url: %s", modeURL)
-		var changer configChanger
+		var changer controller.ConfigChanger
 		switch modeType {
 		case "file":
-			changer = &fileChanger{fileConfig: modeURL}
+			changer = controller.GetFileChanger(modeURL)
 		case "adam":
-			changer = &adamChanger{adamUrl: modeURL}
-
+			changer = controller.GetAdamChanger(modeURL)
 		default:
 			log.Fatalf("Not implemented type: %s", modeType)
 		}
 
-		ctrl, dev, err := changer.getControllerAndDev()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev error: %s", err)
+			log.Fatalf("GetControllerAndDev error: %s", err)
 		}
 		rebootCounter, _ := dev.GetRebootCounter()
 		dev.SetRebootCounter(rebootCounter+1, true)
-		if err = changer.setControllerAndDev(ctrl, dev); err != nil {
-			log.Fatalf("setControllerAndDev error: %s", err)
+		if err = changer.SetControllerAndDev(ctrl, dev); err != nil {
+			log.Fatalf("SetControllerAndDev error: %s", err)
 		}
 		log.Info("Reboot request has been sent")
 	},
@@ -107,7 +107,7 @@ var edgeNodeEVEImageUpdate = &cobra.Command{
 	Long:  `Update EVE image.`,
 	Args:  cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		if baseOSVersionFlag := cmd.Flags().Lookup("os-version"); baseOSVersionFlag != nil {
 			if err := viper.BindPFlag("eve.base-tag", baseOSVersionFlag); err != nil {
 				log.Fatal(err)
@@ -132,18 +132,18 @@ var edgeNodeEVEImageUpdate = &cobra.Command{
 		}
 		log.Debugf("Mode type: %s", modeType)
 		log.Debugf("Mode url: %s", modeURL)
-		var changer configChanger
+		var changer controller.ConfigChanger
 		switch modeType {
 		case "file":
-			changer = &fileChanger{fileConfig: modeURL}
+			changer = controller.GetFileChanger(modeURL)
 		case "adam":
-			changer = &adamChanger{adamUrl: modeURL}
+			changer = controller.GetAdamChanger(modeURL)
 		default:
 			log.Fatalf("Not implemented type: %s", modeType)
 		}
-		ctrl, dev, err := changer.getControllerAndDev()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev error: %s", err)
+			log.Fatalf("GetControllerAndDev error: %s", err)
 		}
 		expectation := expect.AppExpectationFromUrl(ctrl, dev, baseOSImage, "")
 		if len(qemuPorts) == 0 {
@@ -151,8 +151,8 @@ var edgeNodeEVEImageUpdate = &cobra.Command{
 		}
 		baseOSImageConfig := expectation.BaseOSImage()
 		dev.SetBaseOSConfig(append(dev.GetBaseOSConfigs(), baseOSImageConfig.Uuidandversion.Uuid))
-		if err = changer.setControllerAndDev(ctrl, dev); err != nil {
-			log.Fatalf("setControllerAndDev: %s", err)
+		if err = changer.SetControllerAndDev(ctrl, dev); err != nil {
+			log.Fatalf("SetControllerAndDev: %s", err)
 		}
 	},
 }
@@ -163,7 +163,7 @@ var edgeNodeEVEImageRemove = &cobra.Command{
 	Long:  `Remove EVE image.`,
 	Args:  cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading configFile: %s", err.Error())
@@ -204,20 +204,20 @@ var edgeNodeEVEImageRemove = &cobra.Command{
 		}
 		log.Debugf("Mode type: %s", modeType)
 		log.Debugf("Mode url: %s", modeURL)
-		var changer configChanger
+		var changer controller.ConfigChanger
 		switch modeType {
 		case "file":
-			changer = &fileChanger{fileConfig: modeURL}
+			changer = controller.GetFileChanger(modeURL)
 		case "adam":
-			changer = &adamChanger{adamUrl: modeURL}
+			changer = controller.GetAdamChanger(modeURL)
 
 		default:
 			log.Fatalf("Not implemented type: %s", modeType)
 		}
 
-		ctrl, dev, err := changer.getControllerAndDev()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev error: %s", err)
+			log.Fatalf("GetControllerAndDev error: %s", err)
 		}
 
 		if _, err := os.Lstat(rootFsPath); os.IsNotExist(err) {
@@ -258,8 +258,8 @@ var edgeNodeEVEImageRemove = &cobra.Command{
 				}
 			}
 		}
-		if err = changer.setControllerAndDev(ctrl, dev); err != nil {
-			log.Fatalf("setControllerAndDev error: %s", err)
+		if err = changer.SetControllerAndDev(ctrl, dev); err != nil {
+			log.Fatalf("SetControllerAndDev error: %s", err)
 		}
 	},
 }
@@ -269,7 +269,7 @@ var edgeNodeUpdate = &cobra.Command{
 	Short: "update EVE config",
 	Long:  `Update EVE config.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading configFile: %s", err.Error())
@@ -287,27 +287,27 @@ var edgeNodeUpdate = &cobra.Command{
 		}
 		log.Debugf("Mode type: %s", modeType)
 		log.Debugf("Mode url: %s", modeURL)
-		var changer configChanger
+		var changer controller.ConfigChanger
 		switch modeType {
 		case "file":
-			changer = &fileChanger{fileConfig: modeURL}
+			changer = controller.GetFileChanger(modeURL)
 		case "adam":
-			changer = &adamChanger{adamUrl: modeURL}
+			changer = controller.GetAdamChanger(modeURL)
 
 		default:
 			log.Fatalf("Not implemented type: %s", modeType)
 		}
 
-		ctrl, dev, err := changer.getControllerAndDev()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev error: %s", err)
+			log.Fatalf("GetControllerAndDev error: %s", err)
 		}
 		for key, val := range configItems {
 			dev.SetConfigItem(key, val)
 		}
 
-		if err = changer.setControllerAndDev(ctrl, dev); err != nil {
-			log.Fatalf("setControllerAndDev error: %s", err)
+		if err = changer.SetControllerAndDev(ctrl, dev); err != nil {
+			log.Fatalf("SetControllerAndDev error: %s", err)
 		}
 	},
 }
@@ -317,7 +317,7 @@ var edgeNodeGetConfig = &cobra.Command{
 	Short: "fetch EVE config",
 	Long:  `Fetch EVE config.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading configFile: %s", err.Error())
@@ -331,20 +331,20 @@ var edgeNodeGetConfig = &cobra.Command{
 		}
 		log.Debugf("Mode type: %s", modeType)
 		log.Debugf("Mode url: %s", modeURL)
-		var changer configChanger
+		var changer controller.ConfigChanger
 		switch modeType {
 		case "file":
-			changer = &fileChanger{fileConfig: modeURL}
+			changer = controller.GetFileChanger(modeURL)
 		case "adam":
-			changer = &adamChanger{adamUrl: modeURL}
+			changer = controller.GetAdamChanger(modeURL)
 
 		default:
 			log.Fatalf("Not implemented type: %s", modeType)
 		}
 
-		ctrl, dev, err := changer.getControllerAndDev()
+		ctrl, dev, err := changer.GetControllerAndDev()
 		if err != nil {
-			log.Fatalf("getControllerAndDev error: %s", err)
+			log.Fatalf("GetControllerAndDev error: %s", err)
 		}
 
 		res, err := ctrl.GetConfigBytes(dev, true)

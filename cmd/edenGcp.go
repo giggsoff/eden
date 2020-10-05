@@ -29,7 +29,7 @@ var gcpCmd = &cobra.Command{
 	Short: `Manage images and VMs in Google Cloud Platform`,
 	Long:  `Manage images and VMs in Google Cloud Platform (you need to provide a key, set it in config in gcp.key or use a gcloud login)`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 
@@ -83,7 +83,7 @@ var gcpImageUpload = &cobra.Command{
 	Use:   "upload",
 	Short: "upload image to gcp",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -115,7 +115,7 @@ var gcpImageDelete = &cobra.Command{
 	Use:   "delete",
 	Short: "delete image from gcp",
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {

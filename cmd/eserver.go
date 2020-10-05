@@ -20,7 +20,7 @@ var startEserverCmd = &cobra.Command{
 	Short: "start eserver",
 	Long:  `Start eserver.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		viperLoaded, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -53,7 +53,7 @@ var stopEserverCmd = &cobra.Command{
 	Short: "stop eserver",
 	Long:  `Stop eserver.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
@@ -72,7 +72,7 @@ var statusEserverCmd = &cobra.Command{
 	Short: "status of eserver",
 	Long:  `Status of eserver.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
+		utils.AssignCobraToViper(cmd)
 		_, err := utils.LoadConfigFile(configFile)
 		if err != nil {
 			return fmt.Errorf("error reading config: %s", err.Error())
