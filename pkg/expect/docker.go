@@ -78,8 +78,8 @@ func (exp *appExpectation) createDataStoreDocker(id uuid.UUID) *config.Datastore
 }
 
 //applyRootFSType try to parse manifest to get Annotations provided in https://github.com/lf-edge/edge-containers/blob/master/docs/annotations.md
-func applyRootFSType(image *config.Image) error {
-	manifest, err := crane.Manifest(image.Name)
+func (exp *appExpectation) applyRootFSType(image *config.Image) error {
+	manifest, err := crane.Manifest(strings.TrimLeft(fmt.Sprintf("%s/%s", exp.getDataStoreFQDN(), image.Name), "docker://"))
 	if err != nil {
 		return err
 	}
@@ -121,8 +121,8 @@ func applyRootFSType(image *config.Image) error {
 }
 
 //obtainVolumeInfo try to parse docker manifest of defined image and return array of mount points
-func obtainVolumeInfo(image *config.Image) ([]string, error) {
-	cfg, err := crane.Config(image.Name)
+func (exp *appExpectation) obtainVolumeInfo(image *config.Image) ([]string, error) {
+	cfg, err := crane.Config(strings.TrimLeft(fmt.Sprintf("%s/%s", exp.getDataStoreFQDN(), image.Name), "docker://"))
 	if err != nil {
 		return nil, fmt.Errorf("error getting config %s: %v", image.Name, err)
 	}
@@ -160,13 +160,13 @@ func (exp *appExpectation) prepareImage() *config.Image {
 //  it uses name of app and cpu/mem params from appExpectation
 func (exp *appExpectation) createAppInstanceConfigDocker(img *config.Image, id uuid.UUID) *appBundle {
 	log.Infof("Try to obtain info about volumes, please wait")
-	mountPointsList, err := obtainVolumeInfo(img)
+	mountPointsList, err := exp.obtainVolumeInfo(img)
 	if err != nil {
 		//if something wrong with info about image, just print information
 		log.Errorf("cannot obtain info about volumes: %v", err)
 	}
 	log.Infof("Try to obtain info about disks, please wait")
-	if err := applyRootFSType(img); err != nil {
+	if err := exp.applyRootFSType(img); err != nil {
 		//if something wrong with info about disks, just print information
 		log.Errorf("cannot obtain info about disks: %v", err)
 	}
