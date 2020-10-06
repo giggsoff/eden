@@ -23,12 +23,13 @@ func (exp *appExpectation) createImageDocker(id uuid.UUID, dsId string) *config.
 	if err != nil {
 		return nil
 	}
+	reg := ref.Context().RepositoryStr()
 	return &config.Image{
 		Uuidandversion: &config.UUIDandVersion{
 			Uuid:    id.String(),
 			Version: "1",
 		},
-		Name:    fmt.Sprintf("%s:%s", ref.Context().RepositoryStr(), exp.appVersion),
+		Name:    fmt.Sprintf("%s:%s", reg, exp.appVersion),
 		Iformat: exp.imageFormatEnum(),
 		DsId:    dsId,
 	}
@@ -42,9 +43,21 @@ func (exp *appExpectation) checkImageDocker(img *config.Image, dsId string) bool
 	return false
 }
 
+func (exp *appExpectation) getDataStoreFQDN() string {
+	ref, err := name.ParseReference(exp.appUrl)
+	if err != nil {
+		return ""
+	}
+	reg := fmt.Sprintf("docker://%s", ref.Context().Registry.Name())
+	if exp.registry != "" {
+		reg = fmt.Sprintf("docker://%s", exp.registry)
+	}
+	return reg
+}
+
 //checkDataStoreDocker checks if provided ds match expectation
 func (exp *appExpectation) checkDataStoreDocker(ds *config.DatastoreConfig) bool {
-	if ds.DType == config.DsType_DsContainerRegistry && ds.Fqdn == "docker://docker.io" {
+	if ds.DType == config.DsType_DsContainerRegistry && ds.Fqdn == exp.getDataStoreFQDN() {
 		return true
 	}
 	return false
@@ -52,14 +65,10 @@ func (exp *appExpectation) checkDataStoreDocker(ds *config.DatastoreConfig) bool
 
 //createDataStoreDocker creates DatastoreConfig for docker.io with provided id
 func (exp *appExpectation) createDataStoreDocker(id uuid.UUID) *config.DatastoreConfig {
-	ref, err := name.ParseReference(exp.appUrl)
-	if err != nil {
-		return nil
-	}
 	return &config.DatastoreConfig{
 		Id:         id.String(),
 		DType:      config.DsType_DsContainerRegistry,
-		Fqdn:       fmt.Sprintf("docker://%s", ref.Context().Registry.Name()),
+		Fqdn:       exp.getDataStoreFQDN(),
 		ApiKey:     "",
 		Password:   "",
 		Dpath:      "",
