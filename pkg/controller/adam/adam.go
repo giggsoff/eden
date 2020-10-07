@@ -267,7 +267,6 @@ func (adam *Ctx) DeviceGetOnboard(devUUID uuid.UUID) (onboardUUID uuid.UUID, err
 	if err = json.Unmarshal([]byte(devInfo), &devCert); err != nil {
 		return uuid.Nil, err
 	}
-
 	cert, err := x509.ParseCert(devCert.Onboard)
 	if err != nil {
 		return uuid.Nil, err
@@ -317,4 +316,21 @@ func (adam *Ctx) DeviceGetByOnboardUUID(onboardUUID string) (devUUID uuid.UUID, 
 		}
 	}
 	return uuid.Nil, fmt.Errorf("no device found")
+}
+
+//SaveDeviceCert try to get deviceCert and save it to file
+func (adam *Ctx) SaveDeviceCert(device *device.Ctx) error {
+	devUUID, err := adam.DeviceGetByOnboard(device.GetOnboardKey())
+	if err != nil {
+		return err
+	}
+	devInfo, err := adam.getObj(path.Join("/admin/device", devUUID.String()))
+	if err != nil {
+		return err
+	}
+	// TODO not save json
+	if err = ioutil.WriteFile(device.GetDeviceKey(), []byte(devInfo), 0777); err != nil {
+		return err
+	}
+	return nil
 }

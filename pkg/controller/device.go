@@ -256,6 +256,9 @@ func (cloud *CloudCtx) processDev(id uuid.UUID, state device.EdgeNodeState) {
 		log.Fatalf("configParse error: %s", err)
 	}
 	dev.SetState(state)
+	// TODO process only current or make function to obtain per context
+	dev.SetOnboardKey(cloud.vars.EveCert)
+	dev.SetDeviceKey(cloud.vars.EveDeviceCert)
 	cloud.devices = append(cloud.devices, dev)
 
 }

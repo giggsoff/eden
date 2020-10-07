@@ -31,6 +31,7 @@ type Controller interface {
 	DeviceGetByOnboard(eveCert string) (devUUID uuid.UUID, err error)
 	DeviceGetByOnboardUUID(onboardUUID string) (devUUID uuid.UUID, err error)
 	DeviceGetOnboard(devUUID uuid.UUID) (onboardUUID uuid.UUID, err error)
+	SaveDeviceCert(device *device.Ctx) error
 	OnboardRemove(onboardUUID string) (err error)
 	DeviceRemove(devUUID uuid.UUID) (err error)
 	Register(device *device.Ctx) error

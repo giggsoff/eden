@@ -48,6 +48,14 @@ var exportCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		changer := &adamChanger{}
+		ctrl, dev, err := changer.getControllerAndDev()
+		if err != nil {
+			log.Fatalf("getControllerAndDev: %s", err)
+		}
+		if err := ctrl.SaveDeviceCert(dev); err != nil {
+			log.Warn(err)
+		}
 		log.Infof("Export Eden done")
 	},
 }
