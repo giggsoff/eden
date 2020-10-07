@@ -43,21 +43,26 @@ func (exp *appExpectation) checkImageDocker(img *config.Image, dsId string) bool
 	return false
 }
 
-func (exp *appExpectation) getDataStoreFQDN() string {
-	ref, err := name.ParseReference(exp.appUrl)
-	if err != nil {
-		return ""
-	}
-	reg := fmt.Sprintf("docker://%s", ref.Context().Registry.Name())
+func (exp *appExpectation) getDataStoreFQDN(withProto bool) string {
+	var fqdn string
 	if exp.registry != "" {
-		reg = fmt.Sprintf("docker://%s", exp.registry)
+		fqdn = exp.registry
+	} else {
+		ref, err := name.ParseReference(exp.appUrl)
+		if err != nil {
+			return ""
+		}
+		fqdn = ref.Context().Registry.Name()
 	}
-	return reg
+	if withProto {
+		fqdn = fmt.Sprintf("docker://%s", fqdn)
+	}
+	return fqdn
 }
 
 //checkDataStoreDocker checks if provided ds match expectation
 func (exp *appExpectation) checkDataStoreDocker(ds *config.DatastoreConfig) bool {
-	if ds.DType == config.DsType_DsContainerRegistry && ds.Fqdn == exp.getDataStoreFQDN() {
+	if ds.DType == config.DsType_DsContainerRegistry && ds.Fqdn == exp.getDataStoreFQDN(true) {
 		return true
 	}
 	return false
@@ -68,7 +73,7 @@ func (exp *appExpectation) createDataStoreDocker(id uuid.UUID) *config.Datastore
 	return &config.DatastoreConfig{
 		Id:         id.String(),
 		DType:      config.DsType_DsContainerRegistry,
-		Fqdn:       exp.getDataStoreFQDN(),
+		Fqdn:       exp.getDataStoreFQDN(true),
 		ApiKey:     "",
 		Password:   "",
 		Dpath:      "",
@@ -79,7 +84,8 @@ func (exp *appExpectation) createDataStoreDocker(id uuid.UUID) *config.Datastore
 
 //applyRootFSType try to parse manifest to get Annotations provided in https://github.com/lf-edge/edge-containers/blob/master/docs/annotations.md
 func (exp *appExpectation) applyRootFSType(image *config.Image) error {
-	manifest, err := crane.Manifest(strings.TrimLeft(fmt.Sprintf("%s/%s", exp.getDataStoreFQDN(), image.Name), "docker://"))
+	ref := fmt.Sprintf("%s/%s", exp.getDataStoreFQDN(false), image.Name)
+	manifest, err := crane.Manifest(ref)
 	if err != nil {
 		return err
 	}
@@ -122,7 +128,8 @@ func (exp *appExpectation) applyRootFSType(image *config.Image) error {
 
 //obtainVolumeInfo try to parse docker manifest of defined image and return array of mount points
 func (exp *appExpectation) obtainVolumeInfo(image *config.Image) ([]string, error) {
-	cfg, err := crane.Config(strings.TrimLeft(fmt.Sprintf("%s/%s", exp.getDataStoreFQDN(), image.Name), "docker://"))
+	ref := fmt.Sprintf("%s/%s", exp.getDataStoreFQDN(false), image.Name)
+	cfg, err := crane.Config(ref)
 	if err != nil {
 		return nil, fmt.Errorf("error getting config %s: %v", image.Name, err)
 	}
