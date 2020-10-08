@@ -1,19 +1,34 @@
 package cmd
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
 	"github.com/lf-edge/adam/pkg/server"
+	"github.com/lf-edge/eden/pkg/utils"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var exportCmd = &cobra.Command{
-	Use:   "export",
+	Use:   "export <filename>",
 	Short: "export harness",
 	Long:  `Export harness.`,
+	Args:  cobra.ExactArgs(1),
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		assignCobraToViper(cmd)
+		viperLoaded, err := utils.LoadConfigFile(configFile)
+		if err != nil {
+			return fmt.Errorf("error reading config: %s", err.Error())
+		}
+		if viperLoaded {
+			certsDir = utils.ResolveAbsPath(viper.GetString("eden.certs-dist"))
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		changer := &adamChanger{}
 		ctrl, dev, err := changer.getControllerAndDev()
@@ -27,6 +42,18 @@ var exportCmd = &cobra.Command{
 			if err = ioutil.WriteFile(ctrl.GetVars().EveDeviceCert, deviceCert.Cert, 0777); err != nil {
 				log.Warn(err)
 			}
+		}
+		edenDir, err := utils.DefaultEdenDir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		tarFile := args[0]
+		files := []utils.FileToSave{
+			{Location: certsDir, Destination: "certs"},
+			{Location: edenDir, Destination: "eden"},
+		}
+		if err := utils.CreateTar(tarFile, files); err != nil {
+			log.Fatal(err)
 		}
 		log.Infof("Export Eden done")
 	},
