@@ -16,7 +16,6 @@ var (
 //Ctx is base struct for EdgeNode
 type Ctx struct {
 	onboardKey                 string
-	deviceKey                  string
 	serial                     string
 	state                      EdgeNodeState
 	name                       string
@@ -225,16 +224,6 @@ func (cfg *Ctx) GetSerial() string {
 //SetSerial setter
 func (cfg *Ctx) SetSerial(serial string) {
 	cfg.serial = serial
-}
-
-//GetDeviceKey getter
-func (cfg *Ctx) GetDeviceKey() string {
-	return cfg.deviceKey
-}
-
-//SetDeviceKey setter
-func (cfg *Ctx) SetDeviceKey(key string) {
-	cfg.deviceKey = key
 }
 
 //GetOnboardKey getter

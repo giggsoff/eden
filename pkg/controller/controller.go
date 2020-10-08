@@ -3,6 +3,7 @@ package controller
 import (
 	"time"
 
+	"github.com/lf-edge/adam/pkg/server"
 	"github.com/lf-edge/eden/pkg/controller/eapps"
 	"github.com/lf-edge/eden/pkg/controller/einfo"
 	"github.com/lf-edge/eden/pkg/controller/elog"
@@ -31,7 +32,7 @@ type Controller interface {
 	DeviceGetByOnboard(eveCert string) (devUUID uuid.UUID, err error)
 	DeviceGetByOnboardUUID(onboardUUID string) (devUUID uuid.UUID, err error)
 	DeviceGetOnboard(devUUID uuid.UUID) (onboardUUID uuid.UUID, err error)
-	SaveDeviceCert(device *device.Ctx) error
+	GetDeviceCert(device *device.Ctx) (*server.DeviceCert, error)
 	OnboardRemove(onboardUUID string) (err error)
 	DeviceRemove(devUUID uuid.UUID) (err error)
 	Register(device *device.Ctx) error

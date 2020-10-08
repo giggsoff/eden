@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -53,8 +54,13 @@ var exportCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("getControllerAndDev: %s", err)
 		}
-		if err := ctrl.SaveDeviceCert(dev); err != nil {
+		deviceCert, err := ctrl.GetDeviceCert(dev)
+		if err != nil {
 			log.Warn(err)
+		} else {
+			if err = ioutil.WriteFile(ctrl.GetVars().EveDeviceCert, deviceCert.Cert, 0777); err != nil {
+				log.Warn(err)
+			}
 		}
 		log.Infof("Export Eden done")
 	},
