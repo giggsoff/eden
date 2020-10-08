@@ -85,6 +85,7 @@ func init() {
 	rootCmd.AddCommand(networkCmd)
 	networkInit()
 	rootCmd.AddCommand(exportCmd)
+	rootCmd.AddCommand(importCmd)
 	exportImportInit()
 }
 

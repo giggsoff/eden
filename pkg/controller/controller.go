@@ -33,6 +33,7 @@ type Controller interface {
 	DeviceGetByOnboardUUID(onboardUUID string) (devUUID uuid.UUID, err error)
 	DeviceGetOnboard(devUUID uuid.UUID) (onboardUUID uuid.UUID, err error)
 	GetDeviceCert(device *device.Ctx) (*server.DeviceCert, error)
+	UploadDeviceCert(server.DeviceCert) error
 	OnboardRemove(onboardUUID string) (err error)
 	DeviceRemove(devUUID uuid.UUID) (err error)
 	Register(device *device.Ctx) error

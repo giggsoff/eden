@@ -1,53 +1,19 @@
 package cmd
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 
-	"github.com/lf-edge/eden/pkg/defaults"
-	"github.com/lf-edge/eden/pkg/utils"
+	"github.com/lf-edge/adam/pkg/server"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var exportCmd = &cobra.Command{
 	Use:   "export",
 	Short: "export harness",
 	Long:  `Export harness.`,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		assignCobraToViper(cmd)
-		viperLoaded, err := utils.LoadConfigFile(configFile)
-		if err != nil {
-			return fmt.Errorf("error reading config: %s", err.Error())
-		}
-		if viperLoaded {
-			adamTag = viper.GetString("adam.tag")
-			adamPort = viper.GetInt("adam.port")
-			adamDist = utils.ResolveAbsPath(viper.GetString("adam.dist"))
-			adamRemoteRedisURL = viper.GetString("adam.redis.adam")
-			adamRemoteRedis = viper.GetBool("adam.remote.redis")
-			redisTag = viper.GetString("redis.tag")
-			redisPort = viper.GetInt("redis.port")
-			redisDist = utils.ResolveAbsPath(viper.GetString("redis.dist"))
-			eveImageFile = utils.ResolveAbsPath(viper.GetString("eve.image-file"))
-			evePidFile = utils.ResolveAbsPath(viper.GetString("eve.pid"))
-			eveDist = utils.ResolveAbsPath(viper.GetString("eve.dist"))
-			adamDist = utils.ResolveAbsPath(viper.GetString("adam.dist"))
-			certsDir = utils.ResolveAbsPath(viper.GetString("eden.certs-dist"))
-			eserverImageDist = utils.ResolveAbsPath(viper.GetString("eden.images.dist"))
-			qemuFileToSave = utils.ResolveAbsPath(viper.GetString("eve.qemu-config"))
-			redisDist = utils.ResolveAbsPath(viper.GetString("redis.dist"))
-			context, err := utils.ContextLoad()
-			if err != nil {
-				log.Fatalf("Load context error: %s", err)
-			}
-			configSaved = utils.ResolveAbsPath(fmt.Sprintf("%s-%s", context.Current, defaults.DefaultConfigSaved))
-		}
-		return nil
-	},
 	Run: func(cmd *cobra.Command, args []string) {
 		changer := &adamChanger{}
 		ctrl, dev, err := changer.getControllerAndDev()
@@ -66,22 +32,52 @@ var exportCmd = &cobra.Command{
 	},
 }
 
-func exportImportInit() {
-	currentPath, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	configDist, err := utils.DefaultEdenDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-	exportCmd.Flags().StringVarP(&eveDist, "eve-dist", "", filepath.Join(currentPath, defaults.DefaultDist, defaults.DefaultEVEDist), "directory to save EVE")
-	exportCmd.Flags().StringVarP(&redisDist, "redis-dist", "", "", "redis dist")
-	exportCmd.Flags().StringVarP(&qemuFileToSave, "qemu-config", "", "", "file to save qemu config")
-	exportCmd.Flags().StringVarP(&adamDist, "adam-dist", "", "", "adam dist to start (required)")
-	exportCmd.Flags().StringVarP(&eserverImageDist, "image-dist", "", "", "image dist for eserver")
+var importCmd = &cobra.Command{
+	Use:   "import",
+	Short: "import harness",
+	Long:  `Import harness.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		changer := &adamChanger{}
+		ctrl, err := changer.getController()
+		if err != nil {
+			log.Fatal(err)
+		}
+		devUUID, err := ctrl.DeviceGetByOnboard(ctrl.GetVars().EveCert)
+		if err != nil {
+			log.Debug(err)
+		}
+		if devUUID == uuid.Nil {
+			if _, err := os.Stat(ctrl.GetVars().EveDeviceCert); os.IsNotExist(err) {
+				log.Fatalf("No device cert in %s, you need to run 'eden export' first", ctrl.GetVars().EveDeviceCert)
+			}
+			if _, err := os.Stat(ctrl.GetVars().EveCert); os.IsNotExist(err) {
+				log.Fatalf("No onboard cert in %s, you need to run 'eden setup' first", ctrl.GetVars().EveCert)
+			}
+			deviceCert, err := ioutil.ReadFile(ctrl.GetVars().EveDeviceCert)
+			if err != nil {
+				log.Fatal(err)
+			}
+			onboardCert, err := ioutil.ReadFile(ctrl.GetVars().EveCert)
+			if err != nil {
+				log.Warn(err)
+			}
+			dc := server.DeviceCert{
+				Cert:   deviceCert,
+				Serial: ctrl.GetVars().EveSerial,
+			}
+			if onboardCert != nil {
+				dc.Onboard = onboardCert
+			}
+			err = ctrl.UploadDeviceCert(dc)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			log.Info("Device already exists")
+		}
+		log.Infof("Import Eden done")
+	},
+}
 
-	exportCmd.Flags().StringVarP(&certsDir, "certs-dist", "o", filepath.Join(currentPath, defaults.DefaultDist, defaults.DefaultCertsDist), "directory with certs")
-	exportCmd.Flags().StringVarP(&configDir, "config-dist", "", configDist, "directory for config")
-	exportCmd.Flags().BoolVar(&currentContext, "current-context", true, "clean only current context")
+func exportImportInit() {
 }

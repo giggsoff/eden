@@ -169,7 +169,7 @@ func (adam *Ctx) Register(device *device.Ctx) error {
 		log.Printf("error encoding json: %v", err)
 		return err
 	}
-	return adam.postObj("/admin/onboard", body)
+	return adam.postObj("/admin/onboard", body, "application/json")
 }
 
 //DeviceList return device list
@@ -318,7 +318,7 @@ func (adam *Ctx) DeviceGetByOnboardUUID(onboardUUID string) (devUUID uuid.UUID, 
 	return uuid.Nil, fmt.Errorf("no device found")
 }
 
-//GetDeviceCert try to get deviceCert and save it to file
+//GetDeviceCert gets deviceCert contains certificates and serial
 func (adam *Ctx) GetDeviceCert(device *device.Ctx) (deviceCert *server.DeviceCert, err error) {
 	devInfo, err := adam.getObj(path.Join("/admin/device", device.GetID().String()))
 	if err != nil {
@@ -329,4 +329,13 @@ func (adam *Ctx) GetDeviceCert(device *device.Ctx) (deviceCert *server.DeviceCer
 		return nil, err
 	}
 	return &devCert, nil
+}
+
+//UploadDeviceCert upload deviceCert into Adam
+func (adam *Ctx) UploadDeviceCert(deviceCert server.DeviceCert) error {
+	body, err := json.Marshal(deviceCert)
+	if err != nil {
+		return err
+	}
+	return adam.postObj("/admin/device", body, "text/plain")
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/lf-edge/eden/pkg/defaults"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net"
 	"net/http"
@@ -177,7 +178,12 @@ func RepeatableAttempt(client *http.Client, req *http.Request) (response *http.R
 			if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusAccepted {
 				return resp, nil
 			}
-			log.Debugf("bad status: %s", resp.Status)
+			buf, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Debugf("bad status: %s", resp.Status)
+			} else {
+				log.Debugf("bad status (%s) in response (%s)", resp.Status, string(buf))
+			}
 		}
 		log.Debugf("error %s URL %s: %v", req.Method, req.RequestURI, err)
 		timer.Stop()
