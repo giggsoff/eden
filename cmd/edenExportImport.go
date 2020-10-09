@@ -2,8 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/lf-edge/eden/pkg/defaults"
+	"github.com/lf-edge/eden/pkg/eden"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/lf-edge/adam/pkg/server"
 	"github.com/lf-edge/eden/pkg/utils"
@@ -25,12 +28,31 @@ var exportCmd = &cobra.Command{
 			return fmt.Errorf("error reading config: %s", err.Error())
 		}
 		if viperLoaded {
+			adamTag = viper.GetString("adam.tag")
+			adamPort = viper.GetInt("adam.port")
+			adamDist = utils.ResolveAbsPath(viper.GetString("adam.dist"))
+			adamRemoteRedisURL = viper.GetString("adam.redis.adam")
+			adamRemoteRedis = viper.GetBool("adam.remote.redis")
+			redisTag = viper.GetString("redis.tag")
+			redisPort = viper.GetInt("redis.port")
+			redisDist = utils.ResolveAbsPath(viper.GetString("redis.dist"))
 			certsDir = utils.ResolveAbsPath(viper.GetString("eden.certs-dist"))
 		}
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		changer := &adamChanger{}
+		// we need to obtain information about EVE from Adam
+		if err := eden.StartRedis(redisPort, redisDist, false, redisTag); err != nil {
+			log.Errorf("cannot start redis: %s", err)
+		} else {
+			log.Infof("Redis is running and accessible on port %d", redisPort)
+		}
+		if err := eden.StartAdam(adamPort, adamDist, false, adamTag, adamRemoteRedisURL); err != nil {
+			log.Errorf("cannot start adam: %s", err)
+		} else {
+			log.Infof("Adam is running and accessible on port %d", adamPort)
+		}
 		ctrl, dev, err := changer.getControllerAndDev()
 		if err != nil {
 			log.Fatalf("getControllerAndDev: %s", err)
@@ -49,10 +71,11 @@ var exportCmd = &cobra.Command{
 		}
 		tarFile := args[0]
 		files := []utils.FileToSave{
-			{Location: certsDir, Destination: "certs"},
+			{Location: certsDir, Destination: filepath.Join("dist", filepath.Base(certsDir))},
+			{Location: utils.ResolveAbsPath(defaults.DefaultCertsDist), Destination: filepath.Join("dist", defaults.DefaultCertsDist)},
 			{Location: edenDir, Destination: "eden"},
 		}
-		if err := utils.CreateTar(tarFile, files); err != nil {
+		if err := utils.CreateTarGz(tarFile, files); err != nil {
 			log.Fatal(err)
 		}
 		log.Infof("Export Eden done")
@@ -60,10 +83,53 @@ var exportCmd = &cobra.Command{
 }
 
 var importCmd = &cobra.Command{
-	Use:   "import",
+	Use:   "import <filename>",
 	Short: "import harness",
 	Long:  `Import harness.`,
+	Args:  cobra.ExactArgs(1),
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		assignCobraToViper(cmd)
+		viperLoaded, err := utils.LoadConfigFile(configFile)
+		if err != nil {
+			return fmt.Errorf("error reading config: %s", err.Error())
+		}
+		if viperLoaded {
+			adamTag = viper.GetString("adam.tag")
+			adamPort = viper.GetInt("adam.port")
+			adamDist = utils.ResolveAbsPath(viper.GetString("adam.dist"))
+			adamRemoteRedisURL = viper.GetString("adam.redis.adam")
+			adamRemoteRedis = viper.GetBool("adam.remote.redis")
+			redisTag = viper.GetString("redis.tag")
+			redisPort = viper.GetInt("redis.port")
+			redisDist = utils.ResolveAbsPath(viper.GetString("redis.dist"))
+			certsDir = utils.ResolveAbsPath(viper.GetString("eden.certs-dist"))
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
+		edenDir, err := utils.DefaultEdenDir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		files := []utils.FileToSave{
+			{Location: filepath.Join("dist", filepath.Base(certsDir)), Destination: certsDir},
+			{Location: filepath.Join("dist", defaults.DefaultCertsDist), Destination: utils.ResolveAbsPath(defaults.DefaultCertsDist)},
+			{Location: "eden", Destination: edenDir},
+		}
+		if err := utils.UnpackTarGz(args[0], files); err != nil {
+			log.Fatal(err)
+		}
+		// we need to put information about EVE into Adam
+		if err := eden.StartRedis(redisPort, redisDist, false, redisTag); err != nil {
+			log.Errorf("cannot start redis: %s", err)
+		} else {
+			log.Infof("Redis is running and accessible on port %d", redisPort)
+		}
+		if err := eden.StartAdam(adamPort, adamDist, false, adamTag, adamRemoteRedisURL); err != nil {
+			log.Errorf("cannot start adam: %s", err)
+		} else {
+			log.Infof("Adam is running and accessible on port %d", adamPort)
+		}
 		changer := &adamChanger{}
 		ctrl, err := changer.getController()
 		if err != nil {
@@ -75,34 +141,35 @@ var importCmd = &cobra.Command{
 		}
 		if devUUID == uuid.Nil {
 			if _, err := os.Stat(ctrl.GetVars().EveDeviceCert); os.IsNotExist(err) {
-				log.Fatalf("No device cert in %s, you need to run 'eden export' first", ctrl.GetVars().EveDeviceCert)
+				log.Warnf("No device cert %s, you device was not registered", ctrl.GetVars().EveDeviceCert)
+			} else {
+				if _, err := os.Stat(ctrl.GetVars().EveCert); os.IsNotExist(err) {
+					log.Fatalf("No onboard cert in %s, you need to run 'eden setup' first", ctrl.GetVars().EveCert)
+				}
+				deviceCert, err := ioutil.ReadFile(ctrl.GetVars().EveDeviceCert)
+				if err != nil {
+					log.Fatal(err)
+				}
+				onboardCert, err := ioutil.ReadFile(ctrl.GetVars().EveCert)
+				if err != nil {
+					log.Warn(err)
+				}
+				dc := server.DeviceCert{
+					Cert:   deviceCert,
+					Serial: ctrl.GetVars().EveSerial,
+				}
+				if onboardCert != nil {
+					dc.Onboard = onboardCert
+				}
+				err = ctrl.UploadDeviceCert(dc)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
-			if _, err := os.Stat(ctrl.GetVars().EveCert); os.IsNotExist(err) {
-				log.Fatalf("No onboard cert in %s, you need to run 'eden setup' first", ctrl.GetVars().EveCert)
-			}
-			deviceCert, err := ioutil.ReadFile(ctrl.GetVars().EveDeviceCert)
-			if err != nil {
-				log.Fatal(err)
-			}
-			onboardCert, err := ioutil.ReadFile(ctrl.GetVars().EveCert)
-			if err != nil {
-				log.Warn(err)
-			}
-			dc := server.DeviceCert{
-				Cert:   deviceCert,
-				Serial: ctrl.GetVars().EveSerial,
-			}
-			if onboardCert != nil {
-				dc.Onboard = onboardCert
-			}
-			err = ctrl.UploadDeviceCert(dc)
-			if err != nil {
-				log.Fatal(err)
-			}
+			log.Info("You need to run 'eden eve onboard")
 		} else {
 			log.Info("Device already exists")
 		}
-		log.Infof("Import Eden done")
 	},
 }
 
