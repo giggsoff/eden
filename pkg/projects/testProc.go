@@ -2,6 +2,7 @@ package projects
 
 import (
 	"fmt"
+	"github.com/lf-edge/eden/pkg/utils"
 	"sync"
 	"time"
 
@@ -65,7 +66,7 @@ func (lb *processingBus) processReturn(edgeNode *device.Ctx, procFunc *absFunc, 
 			lb.tc.stopTime.Add(lb.tc.addTime)
 		}
 		procFunc.disabled = true
-		toRet := fmt.Sprintf("%T done with return: %s", procFunc.proc, result.Error())
+		toRet := utils.AddTimestamp(fmt.Sprintf("%T done with return: %s", procFunc.proc, result.Error()))
 		if t, ok := lb.tc.tests[edgeNode]; ok {
 			t.Log(toRet)
 		}

@@ -13,11 +13,16 @@ import (
 	"github.com/lf-edge/eve/api/go/info"
 )
 
+type nwState struct {
+	state     string
+	timestamp time.Time
+}
+
 // This test wait for the network's state with a timewait.
 var (
 	timewait = flag.Duration("timewait", time.Minute, "Timewait for items waiting")
 	tc       *projects.TestContext
-	states   map[string][]string
+	states   map[string][]nwState
 	eveState *eve.State
 )
 
@@ -51,7 +56,7 @@ func checkNewLastState(volName, state string) bool {
 	if ok {
 		lastState := volStates[len(volStates)-1]
 		fmt.Printf("lastState: %s state: %s\n", lastState, state)
-		if lastState != state {
+		if lastState.state != state {
 			return true
 		}
 	}
@@ -60,7 +65,7 @@ func checkNewLastState(volName, state string) bool {
 
 func checkAndAppendState(volName, state string) {
 	if checkNewLastState(volName, state) {
-		states[volName] = append(states[volName], state)
+		states[volName] = append(states[volName], nwState{state: state, timestamp: time.Now()})
 	}
 }
 
@@ -124,13 +129,13 @@ func TestNetworkStatus(t *testing.T) {
 	} else {
 		secs := int(timewait.Seconds())
 		state := args[0]
-		fmt.Printf("networks: '%s' state: '%s' secs: %d\n",
-			args[1:], state, secs)
+		t.Log(utils.AddTimestamp(fmt.Sprintf("networks: '%s' state: '%s' secs: %d\n",
+			args[1:], state, secs)))
 
 		vols := args[1:]
-		states = make(map[string][]string)
+		states = make(map[string][]nwState)
 		for _, el := range vols {
-			states[el] = []string{"no info from controller"}
+			states[el] = []nwState{{state: "no info from controller", timestamp: time.Now()}}
 		}
 
 		// observe existing info object and feed them into eveState object
@@ -150,7 +155,7 @@ func TestNetworkStatus(t *testing.T) {
 					if checkNewLastState(k, state) {
 						t.Errorf("\thistory of states for %s:", k)
 						for _, st := range v {
-							t.Errorf("\t\t%s", st)
+							t.Errorf("\t\tstate: %s time: %s", st.state, st.timestamp.Format(time.RFC3339Nano))
 						}
 					}
 				}
@@ -159,7 +164,7 @@ func TestNetworkStatus(t *testing.T) {
 			tc.WaitForProcWithErrorCallback(secs, callback)
 
 		} else {
-			t.Log(ready)
+			t.Log(utils.AddTimestamp(ready.Error()))
 		}
 
 		// sleep to reduce concurrency effects
