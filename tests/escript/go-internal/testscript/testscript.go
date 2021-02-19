@@ -742,7 +742,20 @@ func (ts *TestScript) expand(s string) string {
 
 //Fatalf aborts the test with the given failure message.
 func (ts *TestScript) Fatalf(format string, args ...interface{}) {
+	pathToPrint := ts.file
+	abs, err := filepath.Abs(ts.file)
+	// TODO obtain it from Eden`s config
+	testDirectory := "tests"
+	if err == nil {
+		split := strings.SplitN(abs, fmt.Sprintf("/%s/", testDirectory), 2)
+		if len(split) == 2 {
+			pathToPrint = filepath.Join(testDirectory, split[1])
+		}
+	}
 	fmt.Fprintf(&ts.log, "FAIL: %s:%d: %s\n", ts.file, ts.lineno, fmt.Sprintf(format, args...))
+	ghAnnotation := strings.ReplaceAll(ts.log.String(), "\n", "%0A")
+	ghAnnotation = strings.ReplaceAll(ghAnnotation, "\r", "%0D")
+	fmt.Printf("::error file=%s,line=%d::%s\n", pathToPrint, ts.lineno, ghAnnotation)
 	ts.t.FailNow()
 }
 
