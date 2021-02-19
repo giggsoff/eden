@@ -19,7 +19,7 @@ WORKDIR ?= $(CURDIR)/../dist
 
 #test: $(TESTS:=_test)
 test:
-	gotestsum --format=standard-verbose --jsonfile $(WORKDIR)/results.json --junitfile $(WORKDIR)/results.xml --raw-command -- go tool test2json -t ../eden test workflow -v debug
+	gotestsum --jsonfile $(WORKDIR)/results.json --junitfile $(WORKDIR)/results.xml --raw-command -- go tool test2json -p EdenWorkflow -t ../eden test workflow -v debug
 
 build: $(TESTS:=_build)
 setup: $(TESTS:=_setup)
