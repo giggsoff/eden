@@ -8,33 +8,40 @@ jobs:
   integration:
     runs-on: ubuntu-20.04
     steps:
-      - name: setup
+      - name: get eden
+        uses: actions/checkout@v2
+      - name: setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.15'
+      - name: setup qemu
         run: |
           sudo apt update
           sudo apt install -y qemu-utils qemu-system-x86
-      - name: host info
-        run: |
-          ip a
-      - name: get eden
-        uses: actions/checkout@v2
       - name: build eden
         run: |
-          make clean
           make build-tests
       - name: run
         run: |
           ./eden config add default
           ./eden config set default --key=eve.accel --value=false
           echo > tests/workflow/testdata/eden_stop.txt
-          ./eden test ./tests/workflow -v debug
+          make test
+      - name: Report test results as Annotations
+        if: ${{ always() }}
+        uses: guyarb/golang-test-annotations@v0.1
+        with:
+          test-results: dist/results.json
       - name: Collect logs
         if: ${{ always() }}
         run: |
           ./eden log --format json > trace.log
-          ./eden stop
+          ./eden info > info.log
       - name: Store raw test results
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: 'eden-report'
-          path: ${{ github.workspace }}/trace.log
+          path: |
+            ${{ github.workspace }}/trace.log
+            ${{ github.workspace }}/info.log
