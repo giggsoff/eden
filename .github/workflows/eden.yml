@@ -19,22 +19,5 @@ jobs:
         uses: actions/checkout@v2
       - name: build eden
         run: |
-          make clean
-          make build-tests
-      - name: run
-        run: |
-          ./eden config add default
-          ./eden config set default --key=eve.accel --value=false
-          echo > tests/workflow/testdata/eden_stop.txt
-          ./eden test ./tests/workflow -v debug
-      - name: Collect logs
-        if: ${{ always() }}
-        run: |
-          ./eden log --format json > trace.log
-          ./eden stop
-      - name: Store raw test results
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: 'eden-report'
-          path: ${{ github.workspace }}/trace.log
+          echo "::error file=adam/Makefile,line=1,col=1::Something went wrong GH"
+          exit 1

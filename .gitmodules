@@ -1,0 +1,3 @@
+[submodule "adam"]
+	path = adam
+	url = https://github.com/giggsoff/adam
