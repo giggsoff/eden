@@ -46,6 +46,8 @@ eden.escript.test -test.run TestEdenScripts/eve_restart
 eden.escript.test -testdata ../lim/testdata/ -test.run TestEdenScripts/log_test
 /bin/echo Eden SSH test (06/{{$tests}})
 eden.escript.test -test.run TestEdenScripts/ssh
+/bin/echo Escript fail scenario test (15/{{$tests}})
+eden.escript.test -testdata ../escript/testdata/ -test.run TestEdenScripts/fail_scenario
 {{ if or (eq $workflow "large") (eq $workflow "gcp") }}
 /bin/echo Eden Info test (07/{{$tests}})
 eden.escript.test -testdata ../lim/testdata/ -test.run TestEdenScripts/info_test
@@ -65,8 +67,6 @@ eden.escript.test -testdata ../escript/testdata/ -test.run TestEdenScripts/neste
 eden.escript.test -testdata ../escript/testdata/ -test.run TestEdenScripts/time
 /bin/echo Escript source test (14/{{$tests}})
 eden.escript.test -testdata ../escript/testdata/ -test.run TestEdenScripts/source
-/bin/echo Escript fail scenario test (15/{{$tests}})
-eden.escript.test -testdata ../escript/testdata/ -test.run TestEdenScripts/fail_scenario
 
 /bin/echo Eden basic network test (16/{{$tests}})
 eden.escript.test -testdata ../network/testdata/ -test.run TestEdenScripts/network_test
