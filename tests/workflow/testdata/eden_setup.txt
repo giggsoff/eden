@@ -1,4 +1,3 @@
-stop
 eden -t 10m setup
 stdout 'GenerateEveCerts done'
 stdout 'GenerateEVEConfig done'
