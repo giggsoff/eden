@@ -33,6 +33,8 @@ jobs:
         run: |
           ./eden config add default
           ./eden config set default --key=eve.accel --value=false
+          ./eden config set default --key=eve.log-level --value=debug
+          ./eden config set default --key=eve.adam-log-level --value=debug
           echo > tests/workflow/testdata/eden_stop.txt
           ./eden test ./tests/workflow -v debug
       - name: Collect logs
