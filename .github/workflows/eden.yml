@@ -32,20 +32,30 @@ jobs:
       - name: run
         run: |
           ./eden config add default
+          ./eden config set default --key=eve.log-level --value=debug
+          ./eden config set default --key=eve.adam-log-level --value=debug
           ./eden config set default --key=eve.accel --value=false
           echo > tests/workflow/testdata/eden_stop.txt
           ./eden test ./tests/workflow -v debug
       - name: Collect logs
         if: ${{ always() }}
         run: |
-          ./eden log --format json > trace.log
-          ./eden info > info.log
+          ./eden log --format json > trace.log || echo "no log"
+          ./eden info > info.log || echo "no info"
+          cp dist/default-eve.log console.log || echo "no device log"
+          docker logs eden_adam > adam.log 2>&1 || echo "no adam log"
+          ./eden eve ssh 'cat ps aux' > ssh.log || echo "ssh problem"
+          ./eden eve ssh 'eve exec pillar iptables -vL -t filter' >> ssh.log || echo "ssh problem"
+          ./eden eve ssh 'eve exec pillar iptables -vL -t nat' >> ssh.log || echo "ssh problem"
+          ./eden eve ssh 'eve exec pillar iptables -vL -t mangle' >> ssh.log || echo "ssh problem"
       - name: Store raw test results
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: 'eden-report'
           path: |
-              ${{ github.workspace }}/trace.log
-              ${{ github.workspace }}/info.log
-              ${{ github.workspace }}/dist/default-eve.log
+            ${{ github.workspace }}/trace.log
+            ${{ github.workspace }}/info.log
+            ${{ github.workspace }}/console.log
+            ${{ github.workspace }}/adam.log
+            ${{ github.workspace }}/ssh.log

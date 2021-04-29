@@ -48,7 +48,7 @@ const (
 	DefaultRegistryPort = 5000
 
 	//tags, versions, repos
-	DefaultEVETag               = "6.3.0" //DefaultEVETag tag for EVE image
+	DefaultEVETag               = "0.0.0-master-fe444b52" //DefaultEVETag tag for EVE image
 	DefaultAdamTag              = "0.0.12"
 	DefaultRedisTag             = "6"
 	DefaultRegistryTag          = "2.7"
@@ -62,9 +62,11 @@ const (
 	DefaultEveRegistry          = "lfedge"
 	DefaultRegistry             = "docker.io"
 
-	DefaultSFTPUser     = "user"
-	DefaultSFTPPassword = "password"
+	DefaultSFTPUser      = "user"
+	DefaultSFTPPassword  = "password"
 	DefaultSFTPDirPrefix = "/eserver/run"
+
+	DefaultRedisPasswordFile = "redis.pass"
 
 	DefaultEServerTag          = "1.4"
 	DefaultEServerContainerRef = "lfedge/eden-http-server"
@@ -118,6 +120,10 @@ const (
 	DefaultGCPModel = "GCP"
 
 	DefaultVBoxModel = "VBox"
+
+	DefaultVBoxSubnet = "10.0.2.0/24"
+
+	DefaultPortMapOffset = 10
 
 	DefaultParallelsModel = "parallels"
 
@@ -208,6 +214,7 @@ var (
 		"eve.config-part":  "config-part",
 		"eve.base-version": "os-version",
 		"eve.devmodel":     "devmodel",
+		"eve.devmodelfile": "devmodel-file",
 		"eve.telnet-port":  "eve-telnet-port",
 
 		"eden.images.dist":   "image-dist",

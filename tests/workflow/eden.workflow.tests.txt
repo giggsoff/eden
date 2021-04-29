@@ -8,6 +8,8 @@
 {{$stop := EdenGetEnv "EDEN_TEST_STOP"}}
 # EDEN_TEST_USB_PT -- "y" enables USB Passthrough test (disabled by default).
 {{$usb_pt := EdenGetEnv "EDEN_TEST_USB_PT"}}
+# EDEN_TEST_REGISTRY env. var. -- "y"(default) performs the local EDEN registry test
+{{$registry := EdenGetEnv "EDEN_TEST_REGISTRY"}}
 
 {{$devmodel := EdenConfig "eve.devmodel"}}
 
@@ -77,57 +79,3 @@ eden.escript.test -testdata ../volume/testdata/ -test.run TestEdenScripts/volume
 
 /bin/echo Eden Host only ACL (18.1/{{$tests}})
 eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/host-only
-/bin/echo Eden ACL to particular host (18.2/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/acl
-/bin/echo Eden Network light (19/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/networking_light
-/bin/echo Eden Networks switch (20/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/nw_switch
-/bin/echo Eden Network Ports switch (21/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/port_switch
-/bin/echo Eden Network portmap test (21.1/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/port_forward
-
-{{if (eq $usb_pt "y")}}
-/bin/echo Hardware reboot - USB (22/{{$tests}})
-eden.escript.test -testdata ../hardware_reboot/testdata/ -test.run TestEdenScripts/hardware_usb_reboot
-{{end}}
-
-{{ if or (eq $workflow "large") (eq $workflow "gcp") }}
-/bin/echo Eden VNC (23/{{$tests}})
-eden.escript.test -testdata ../vnc/testdata/ -test.run TestEdenScripts/vnc_test
-/bin/echo Eden registry (24/{{$tests}})
-eden.escript.test -testdata ../registry/testdata/ -test.run TestEdenScripts/registry_test
-/bin/echo Eden Network test (25/{{$tests}})
-eden.escript.test -testdata ../network/testdata/ -test.run TestEdenScripts/test_networking
-/bin/echo Eden 2 dockers test (26/{{$tests}})
-eden.escript.test -testdata ../docker/testdata/ -test.run TestEdenScripts/2dockers_test
-/bin/echo Eden 2 dockers test with app state detector (27/{{$tests}})
-eden.escript.test -testdata ../app/testdata/ -test.run TestEdenScripts/2dockers_test
-/bin/echo Eden Nginx (28/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/ngnix
-/bin/echo Eden Mariadb (29/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/maridb
-/bin/echo Eden eclient with disk (30/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/disk
-/bin/echo EVE reset (31/{{$tests}})
-eden.escript.test -test.run TestEdenScripts/eden_reset
-{{end}}
-{{ if  (eq $workflow "large")  }}
-/bin/echo Eden's testing the maximum application limit (32/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/eclients
-{{end}}
-
-/bin/echo Eden Reboot test (33/{{$tests}})
-eden.escript.test -test.run TestEdenScripts/reboot_test
-{{ if ne $workflow "small" }}
-/bin/echo Eden base OS update http (34/{{$tests}})
-eden.escript.test -testdata ../update_eve_image/testdata/ -test.run TestEdenScripts/update_eve_image_http
-/bin/echo Eden base OS update oci (35/{{$tests}})
-eden.escript.test -testdata ../update_eve_image/testdata/ -test.run TestEdenScripts/update_eve_image_oci
-{{end}}
-
-{{if (eq $stop "y")}}
-/bin/echo Eden stop (36/{{$tests}})
-eden.escript.test -test.run TestEdenScripts/eden_stop
-{{end}}
