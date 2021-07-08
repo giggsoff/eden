@@ -24,16 +24,17 @@ jobs:
           done
       - name: setup
         run: |
-          sudo apt update
+          sudo add-apt-repository ppa:canonical-server/server-backports
           sudo apt install -y qemu-utils qemu-system-x86 jq
       - name: build eden
         run: |
-          make build-tests
+          make build
       - name: run
         run: |
-          ./eden config add default
+          ./eden config add default --cpus=2
           ./eden config set default --key=eve.accel --value=false
           echo > tests/workflow/testdata/eden_stop.txt
+          make build-tests
           ./eden test ./tests/workflow -v debug
       - name: Collect logs
         if: ${{ always() }}
